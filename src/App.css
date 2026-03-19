@@ -59,6 +59,44 @@ textarea {
   resize: vertical;
 }
 
+/* Webhook info */
+.webhook-info {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--text-h);
+  }
+
+  p {
+    margin: 8px 0;
+  }
+
+  code {
+    font-size: 12px;
+    display: block;
+    padding: 6px 10px;
+    word-break: break-all;
+  }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--code-bg);
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin: 8px 0;
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+}
+
 button[type='submit'] {
   padding: 10px 20px;
   border: none;

@@ -41,6 +41,10 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView()
+  }, [])
+
   // Subscribe to incoming messages via SSE
   useEffect(() => {
     const es = new EventSource('/incoming-stream')
@@ -160,6 +164,24 @@ function App() {
             />
           </label>
         </form>
+
+        <div className="webhook-info">
+          <h3>Incoming Messages Webhook</h3>
+          <p>
+            To receive incoming SMS, configure your Twilio phone number's
+            webhook to POST to:
+          </p>
+          <code>{`${window.location.origin}/incoming`}</code>
+          <p>
+            Use <strong>ngrok</strong> or <strong>Hookdeck</strong> to
+            expose this endpoint publicly:
+          </p>
+          <pre>{`# ngrok\nngrok http ${window.location.port || '5173'}\n\n# Hookdeck\nhookdeck listen ${window.location.port || '5173'} twilio-sms`}</pre>
+          <p>
+            Then set the tunnel URL + <code>/incoming</code> as
+            your Twilio number's messaging webhook.
+          </p>
+        </div>
       </div>
 
       <div className="messages-panel">
@@ -198,6 +220,12 @@ function App() {
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  if (body.trim()) e.currentTarget.form?.requestSubmit()
+                }
+              }}
               placeholder="Type a message..."
               rows={2}
               required
