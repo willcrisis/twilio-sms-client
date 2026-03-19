@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useRef, type FormEvent } from 'react'
 import './App.css'
 
 interface Message {
@@ -35,6 +35,11 @@ function App() {
   const [messages, setMessages] = useState<Message[]>(getMessages)
   const [status, setStatus] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [loading, setLoading] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   // Subscribe to incoming messages via SSE
   useEffect(() => {
@@ -42,10 +47,11 @@ function App() {
     es.onmessage = (event) => {
       const incoming: Message = { ...JSON.parse(event.data), direction: 'inbound' }
       setMessages((prev) => {
-        const updated = [incoming, ...prev]
+        const updated = [...prev, incoming]
         saveMessages(updated)
         return updated
       })
+      setTimeout(scrollToBottom, 50)
     }
     return () => es.close()
   }, [])
@@ -88,10 +94,11 @@ function App() {
         sid: data.sid,
       }
       setMessages((prev) => {
-        const updated = [newMessage, ...prev]
+        const updated = [...prev, newMessage]
         saveMessages(updated)
         return updated
       })
+      setTimeout(scrollToBottom, 50)
 
       setBody('')
       setStatus({ type: 'success', text: 'Message sent!' })
@@ -152,22 +159,6 @@ function App() {
               required
             />
           </label>
-          <label>
-            Message
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Your message..."
-              rows={4}
-              required
-            />
-          </label>
-          <button type="submit" disabled={loading}>
-            {loading ? 'Sending...' : 'Send Message'}
-          </button>
-          {status && (
-            <p className={`status ${status.type}`}>{status.text}</p>
-          )}
         </form>
       </div>
 
@@ -196,8 +187,26 @@ function App() {
                 {msg.sid && <span className="message-sid">SID: {msg.sid}</span>}
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
         )}
+        <div className="compose">
+          {status && (
+            <p className={`status ${status.type}`}>{status.text}</p>
+          )}
+          <form onSubmit={handleSubmit} className="compose-form">
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Type a message..."
+              rows={2}
+              required
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? 'Sending...' : 'Send'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )
