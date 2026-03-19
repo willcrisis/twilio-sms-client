@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, type FormEvent } from 'react'
+import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react'
 import './App.css'
+import faviconUrl from '/favicon.svg?url'
 
 interface Message {
   direction: 'outbound' | 'inbound'
@@ -35,11 +36,54 @@ function App() {
   const [messages, setMessages] = useState<Message[]>(getMessages)
   const [status, setStatus] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [hasUnread, setHasUnread] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  // Update favicon when unread state changes
+  const updateFavicon = useCallback((unread: boolean) => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    if (!link) return
+
+    if (!unread) {
+      link.href = faviconUrl
+      return
+    }
+
+    const img = new Image()
+    img.onload = () => {
+      const size = 64
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, size, size)
+      // Red dot in top-right
+      const r = 10
+      ctx.beginPath()
+      ctx.arc(size - r - 2, r + 2, r, 0, 2 * Math.PI)
+      ctx.fillStyle = '#ef4444'
+      ctx.fill()
+      link.href = canvas.toDataURL()
+    }
+    img.src = faviconUrl
+  }, [])
+
+  useEffect(() => {
+    updateFavicon(hasUnread)
+  }, [hasUnread, updateFavicon])
+
+  // Clear unread when tab becomes visible
+  useEffect(() => {
+    const onVisibility = () => {
+      if (!document.hidden) setHasUnread(false)
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView()
@@ -55,6 +99,7 @@ function App() {
         saveMessages(updated)
         return updated
       })
+      if (document.hidden) setHasUnread(true)
       setTimeout(scrollToBottom, 50)
     }
     return () => es.close()
